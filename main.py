@@ -33,7 +33,7 @@ WEBHOOK_PATH = f"/webhook/{TELEGRAM_BOT_TOKEN}"
 PORT = int(os.environ.get("PORT", 8000))
 
 
-app = FastAPI(title="Telegram bot API", version="0-.0.1")
+app = FastAPI(title="Telegram bot API", version="0.0.1")
 
 
 def get_mv_thesaurus_output(word: str) -> str | None:
@@ -84,7 +84,6 @@ bot_app.add_handler(CommandHandler("start", start))
 bot_app.add_handler(
     MessageHandler(filters.TEXT & ~filters.COMMAND, output_word_info)
 )
-bot_app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
 @app.get("/")
@@ -111,6 +110,10 @@ async def health_check():
 @app.post(WEBHOOK_PATH)
 async def webhook(request: Request):
     try:
+        if not bot_app.running:
+            await bot_app.initialize()
+            await bot_app.start()
+
         json_data = await request.json()
         update = Update.de_json(json_data, bot_app.bot)
         await bot_app.process_update(update)

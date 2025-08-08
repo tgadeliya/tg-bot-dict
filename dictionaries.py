@@ -205,20 +205,37 @@ def get_mv_dictionary_output(word: str) -> str | None:
 
 API_URL = "https://dictionary.yandex.net/api/v1/dicservice.json/lookup"
 
-def yandex_translate_en_ru(word):
-    params = {
-        "key": YANDEX_API_KEY,
-        "lang": "en-ru",
-        "text": word
-    }
-    r = requests.get(API_URL, params=params)
-    r.raise_for_status()
-    data = r.json()
 
-    translations = []
+def yandex_translate_en_ru(word: str) -> list[str]:
+    """Return unique Russian translations for the given English ``word``.
+
+    The Yandex Dictionary API can return multiple translation variants and
+    their synonyms.  This helper extracts all of them, while making a best
+    effort to handle network errors gracefully and to deduplicate results.
+    """
+
+    params = {"key": YANDEX_API_KEY, "lang": "en-ru", "text": word}
+    try:
+        response = requests.get(API_URL, params=params, timeout=5)
+        response.raise_for_status()
+    except requests.RequestException:
+        return []
+
+    data = response.json()
+    translations: list[str] = []
+
     for def_item in data.get("def", []):
         for tr_item in def_item.get("tr", []):
-            translations.append(tr_item.get("text"))
+            text = tr_item.get("text")
+            if text:
+                translations.append(text)
 
-    return translations
+            # Include synonyms if present
+            for syn in tr_item.get("syn", []) or []:
+                syn_text = syn.get("text")
+                if syn_text:
+                    translations.append(syn_text)
+
+    # Deduplicate while preserving order
+    return list(dict.fromkeys(translations))
 

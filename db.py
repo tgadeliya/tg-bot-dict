@@ -40,3 +40,23 @@ def save_definition(word: str, definition: str) -> None:
     )
     conn.commit()
     conn.close()
+
+
+def count_definitions() -> int:
+    """Return number of stored word definitions."""
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM definitions")
+    (count,) = cur.fetchone()
+    conn.close()
+    return count
+
+
+def get_all_definitions() -> list[tuple[str, str]]:
+    """Return all stored word-definition pairs."""
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT word, definition FROM definitions")
+    rows = cur.fetchall()
+    conn.close()
+    return rows

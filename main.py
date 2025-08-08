@@ -59,10 +59,28 @@ def get_mv_thesaurus_output(word: str) -> str | None:
         return None
 
 
-def get_mv_dictionary_output(word: str) -> str | None:
-    cached = get_definition(word)
-    if cached:
-        return cached
+def get_mv_dictionary_output(
+    word: str, *, cached: str | None = None, refresh: bool = False
+) -> str | None:
+    """Fetch word info from API and optionally bypass cache.
+
+    Parameters
+    ----------
+    word:
+        Word to look up.
+    cached:
+        Cached value for ``word`` if already retrieved.
+    refresh:
+        If ``True``, always fetch from the API and update the database.
+        Otherwise, return ``cached`` or cached value from the database if
+        available.
+    """
+
+    if not refresh:
+        if cached is None:
+            cached = get_definition(word)
+        if cached:
+            return cached
 
     response = requests.get(
         f"https://www.dictionaryapi.com/api/v3/references/collegiate/json/{word}?key={MW_DICTIONARY_API_KEY}"
@@ -102,7 +120,8 @@ async def output_word_info(
 ) -> None:
     """Given word as input, output information from Marriam-Webster sources"""
     word = update.message.text
-    out = get_mv_dictionary_output(word)
+    cached = get_definition(word)
+    out = get_mv_dictionary_output(word, cached=cached, refresh=bool(cached))
     await update.message.reply_text(out)
 
 
@@ -130,10 +149,27 @@ async def export_anki(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await update.message.reply_document(document=bio, filename="flashcards.tsv")
 
 
+async def refresh_db(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Manually refresh all stored words with the current output format."""
+    entries = get_all_definitions()
+    if not entries:
+        await update.message.reply_text("Database is empty")
+        return
+
+    updated = 0
+    for word, _ in entries:
+        out = get_mv_dictionary_output(word, refresh=True)
+        if out is not None:
+            updated += 1
+
+    await update.message.reply_text(f"Updated {updated} words")
+
+
 bot_app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 bot_app.add_handler(CommandHandler("start", start))
 bot_app.add_handler(CommandHandler("stats", stats))
 bot_app.add_handler(CommandHandler("anki", export_anki))
+bot_app.add_handler(CommandHandler("refresh_db", refresh_db))
 bot_app.add_handler(
     MessageHandler(filters.TEXT & ~filters.COMMAND, output_word_info)
 )

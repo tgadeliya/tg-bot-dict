@@ -1,7 +1,7 @@
 [project]
 name = "tg-bot-dict"
 version = "0.1.0"
-description = "Add your description here"
+description = "Telegram bot for learning new English words"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

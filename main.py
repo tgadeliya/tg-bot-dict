@@ -5,7 +5,7 @@ from io import StringIO, BytesIO
 import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException
-from telegram import ForceReply, Update
+from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -21,7 +21,7 @@ from db import (
     count_definitions,
     get_all_definitions,
 )
-from dictionaries import process_api_response_to_string
+from dictionaries import process_api_response_to_string, yandex_translate_en_ru
 
 # Enable logging
 logging.basicConfig(
@@ -69,7 +69,17 @@ def get_mv_dictionary_output(word: str) -> str | None:
     )
     if response.status_code == 200:
         data = response.json()
-        out = process_api_response_to_string(data)
+        definitions_out = process_api_response_to_string(data)
+        translations = yandex_translate_en_ru(word)
+
+        if translations:
+            translation_lines = "\n".join(
+                f"  {i}. {t}" for i, t in enumerate(translations, 1)
+            )
+            out = f"{definitions_out}\nTranslations:\n{translation_lines}"
+        else:
+            out = definitions_out
+
         save_definition(word, out)
         return out
     else:

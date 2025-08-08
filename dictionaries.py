@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from dotenv import load_dotenv
 
@@ -6,9 +7,7 @@ load_dotenv()
 TELEGRAM_BOT_TOKEN: str | None = os.getenv("TELEGRAM_BOT_TOKEN")
 MW_THESAURUS_API_KEY: str | None = os.getenv("MW_THESAURUS_KEY")
 MW_DICTIONARY_API_KEY: str | None = os.getenv("MW_DICTIONARY_KEY")
-
-
-import re  # For cleaning text
+YANDEX_API_KEY: str| None = os.getenv("YANDEX_API_KEY")
 
 
 def clean_definition_text(text):
@@ -204,5 +203,22 @@ def get_mv_dictionary_output(word: str) -> str | None:
     return process_api_response_to_string(dict_response)
 
 
-word = "cat"
-get_mv_dictionary_output(word)
+API_URL = "https://dictionary.yandex.net/api/v1/dicservice.json/lookup"
+
+def yandex_translate_en_ru(word):
+    params = {
+        "key": YANDEX_API_KEY,
+        "lang": "en-ru",
+        "text": word
+    }
+    r = requests.get(API_URL, params=params)
+    r.raise_for_status()
+    data = r.json()
+
+    translations = []
+    for def_item in data.get("def", []):
+        for tr_item in def_item.get("tr", []):
+            translations.append(tr_item.get("text"))
+
+    return translations
+

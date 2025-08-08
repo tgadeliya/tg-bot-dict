@@ -1,5 +1,6 @@
 import logging
 import os
+from io import StringIO, BytesIO
 
 import requests
 from dotenv import load_dotenv
@@ -13,7 +14,13 @@ from telegram.ext import (
     filters,
 )
 
-from db import init_db, get_definition, save_definition
+from db import (
+    init_db,
+    get_definition,
+    save_definition,
+    count_definitions,
+    get_all_definitions,
+)
 from dictionaries import process_api_response_to_string
 
 # Enable logging
@@ -89,8 +96,34 @@ async def output_word_info(
     await update.message.reply_text(out)
 
 
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send basic statistics about stored words."""
+    count = count_definitions()
+    await update.message.reply_text(f"Stored words: {count}")
+
+
+async def export_anki(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Export all stored words into a TSV file for Anki import."""
+    entries = get_all_definitions()
+    if not entries:
+        await update.message.reply_text("Database is empty")
+        return
+
+    output = StringIO()
+    for word, definition in entries:
+        output.write(f"{word}\t{definition}\n")
+    output.seek(0)
+
+    bio = BytesIO(output.getvalue().encode("utf-8"))
+    bio.name = "flashcards.tsv"
+
+    await update.message.reply_document(document=bio, filename="flashcards.tsv")
+
+
 bot_app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 bot_app.add_handler(CommandHandler("start", start))
+bot_app.add_handler(CommandHandler("stats", stats))
+bot_app.add_handler(CommandHandler("anki", export_anki))
 bot_app.add_handler(
     MessageHandler(filters.TEXT & ~filters.COMMAND, output_word_info)
 )

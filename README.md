@@ -7,10 +7,11 @@ A Telegram bot that provides English word **meanings** and **translations** on r
 - 🔍 Get definitions for English words
 - 📌 Simple interface via Telegram chat
 - 💾 Caches looked-up definitions in a local SQLite database
+- 📊 `/stats` command to show number of stored words
+- 📝 `/anki` command to export words as Anki flashcards
 
 ### Planned Features (Coming Soon)
 
-- Generate [Anki](https://apps.ankiweb.net/) flashcards directly from words
 - Translate words to your native language
 - Generate sentence examples with provided word
 - Store translations in a local database for review

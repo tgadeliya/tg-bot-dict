@@ -6,13 +6,14 @@ A Telegram bot that provides English word **meanings** and **translations** on r
 
 - 🔍 Get definitions for English words
 - 📌 Simple interface via Telegram chat
+- 💾 Caches looked-up definitions in a local SQLite database
 
 ### Planned Features (Coming Soon)
 
 - Generate [Anki](https://apps.ankiweb.net/) flashcards directly from words
 - Translate words to your native language
 - Generate sentence examples with provided word
-- Store words, meanings, and translations in a local database for review
+- Store translations in a local database for review
 
 
 ## Getting Started

@@ -13,6 +13,7 @@ from telegram.ext import (
     filters,
 )
 
+from db import init_db, get_definition, save_definition
 from dictionaries import process_api_response_to_string
 
 # Enable logging
@@ -32,6 +33,9 @@ WEBHOOK_URL = f"https://bot.theteacat.cc/webhook/{TELEGRAM_BOT_TOKEN}"
 WEBHOOK_PATH = f"/webhook/{TELEGRAM_BOT_TOKEN}"
 PORT = int(os.environ.get("PORT", 8000))
 
+# prepare SQLite cache
+init_db()
+
 
 app = FastAPI(title="Telegram bot API", version="0.0.1")
 
@@ -49,12 +53,18 @@ def get_mv_thesaurus_output(word: str) -> str | None:
 
 
 def get_mv_dictionary_output(word: str) -> str | None:
+    cached = get_definition(word)
+    if cached:
+        return cached
+
     response = requests.get(
         f"https://www.dictionaryapi.com/api/v3/references/collegiate/json/{word}?key={MW_DICTIONARY_API_KEY}"
     )
     if response.status_code == 200:
         data = response.json()
-        return process_api_response_to_string(data)
+        out = process_api_response_to_string(data)
+        save_definition(word, out)
+        return out
     else:
         return None
 

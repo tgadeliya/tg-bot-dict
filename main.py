@@ -87,6 +87,9 @@ def get_mv_dictionary_output(
     )
     if response.status_code == 200:
         data = response.json()
+        if isinstance(data, list) and data and isinstance(data[0], str):
+            return f'"{word}" not found in Merriam-Webster.'
+
         definitions_out = process_api_response_to_string(data)
         translations = yandex_translate_en_ru(word)
 
@@ -131,7 +134,9 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(f"Stored words: {count}")
 
 
-async def export_anki(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def export_anki(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     """Export all stored words into a TSV file for Anki import."""
     entries = get_all_definitions()
     if not entries:
@@ -149,7 +154,9 @@ async def export_anki(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await update.message.reply_document(document=bio, filename="flashcards.tsv")
 
 
-async def refresh_db(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def refresh_db(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     """Manually refresh all stored words with the current output format."""
     entries = get_all_definitions()
     if not entries:
@@ -179,7 +186,9 @@ bot_app.add_handler(
 async def root():
     """Root endpoint showing bot status."""
     return {
-        "message": "🍓☁️ Telegram Bot running on Raspberry Pi via Cloudflare Tunnel!",
+        "message": (
+            "🍓☁️ Telegram Bot running on Raspberry Pi via Cloudflare Tunnel!"
+        ),
         "status": "active",
         "tunnel": "cloudflare",
         "docs": "/docs",
